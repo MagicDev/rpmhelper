@@ -1,0 +1,43 @@
+#!/bin/bash
+
+PWD=`pwd`
+
+if [ -f $HOME/.mgcbuilder/mbrc ] ; then
+    . $HOME/.mgcbuilder/mbrc
+fi
+
+if [ -z "$MBDIR" ] ; then
+    echo "Error: No MBDIR defined, maybe not having mb-init run?"
+    exit -1
+fi
+
+if [ -n "$1" ] ; then
+    BUILD_TARGET="$1"
+else # judge from basename
+    BUILD_TARGET=`basename $PWD`.spec
+fi
+shift
+
+if [ ! -f $BUILD_TARGET ] ; then
+    echo "Error: Build target \"$BUILD_TARGET\" not found!"
+    exit -1
+fi
+
+if [ -n "$*" ] ; then
+    BUILD_OPT="$*"
+else
+    BUILD_OPT="--target i686"
+    case $BUILD_TARGET in
+        *.spec)
+            BUILD_OPT="-ba $BUILD_OPT" ;;
+        *.src.rpm)
+	    BUILD_OPT="--rebuild $BUILD_OPT" ;;
+        *)
+            BUILD_OPT="-ba $BUILD_OPT" ;;
+    esac
+fi
+
+/usr/bin/rpmbuild --define "_topdir $MBDIR/mBuild" \
+		  --define "_sourcedir $PWD" \
+		  --define "_tmppath $MBDIR/mBuild/TMP" \
+		  $BUILD_OPT $BUILD_TARGET

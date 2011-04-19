@@ -1,0 +1,65 @@
+#!/bin/bash
+
+PWD=`pwd`
+
+if [ -f $HOME/.mgcbuilder/mbrc ] ; then
+    . $HOME/.mgcbuilder/mbrc
+fi
+
+if [ -z "$MBDIR" ] ; then
+    echo Error: No MBDIR defined, maybe not having mb-init run?
+    exit -1
+fi
+
+if [ -n "$1" ] ; then
+    TARGET="$1"
+else # judge from basename
+    TARGET=`basename $PWD`.spec
+fi
+
+if [ ! -f $TARGET ] ; then
+    echo Error: "$TARGET" not found!
+    exit -1
+fi
+
+rpm-parsespec $TARGET | {
+RC=0
+while read NAME VALUE ; do
+    case $NAME in
+        source*)
+	    VALUE=`basename $VALUE`
+            if [ ! -f $VALUE ] ; then
+	        echo $NAME $VALUE not found, try to pull.
+                mb-pull-pkg $VALUE
+            fi
+
+            if [ ! -f $VALUE ] ; then
+                echo $NAME $VALUE [fail]
+                RC=-1
+            else
+                echo $NAME $VALUE [ok]
+            fi
+            ;;
+	patch*)
+	    VALUE=`basename $VALUE`
+            if [ ! -f $VALUE ] ; then
+	        echo $NAME $VALUE not found
+                RC=-1
+            else
+                echo $NAME $VALUE [ok]
+            fi
+            ;;
+    esac
+done
+exit $RC
+}
+
+echo
+if [ $? != 0 ] ; then
+    echo "Something is wrong!"
+    exit -1
+else
+    echo "Everything is OK!"
+    exit 0
+fi
+

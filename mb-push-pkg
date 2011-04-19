@@ -1,0 +1,34 @@
+#!/bin/bash
+
+PWD=`pwd`
+
+if [ -f $HOME/.mgcbuilder/mbrc ] ; then
+    . $HOME/.mgcbuilder/mbrc
+fi
+
+if [ -z "$MBDIR" ] ; then
+    echo "Error: No MBDIR defined, maybe not having mb-init run?"
+    exit -1
+fi
+
+if [ -n "$1" ] ; then
+    TARGET="$1"
+else
+    echo "Error: Please specify package name."
+    exit -1
+fi
+
+CATEGORY=`GET_CATEGORY`
+
+if [ ! -f $MBPKGDIR/$CATEGORY/$TARGET ] ; then
+    echo "$TARGET not found!"
+    exit -1
+fi
+
+echo -n "$MBPKGUPLOAD username: "
+read USER
+lftp -e "ls $CATEGORY || \
+mkdir -p $CATEGORY; \
+put -O $CATEGORY $MBPKGDIR/$CATEGORY/$TARGET; \
+exit" \
+  -u $USER $MBPKGUPLOAD

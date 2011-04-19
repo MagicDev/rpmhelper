@@ -1,0 +1,101 @@
+#!/usr/bin/python
+#
+# rpm-parsespec - Parse rpm spec file.
+#
+# Levin Du <zsdjw@21cn.com>
+#
+# Copyright 2007 Magic Linux Group
+#
+# This software may be freely redistributed under the terms of the GNU
+# library public license.
+#
+# You should have received a copy of the GNU Library Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+
+import os
+import sys
+import rpmhelper
+
+help_msg = """Usage: rpm-parsespec <rpmspecfile>
+rpm-parsespec will generate output like below:
+
+name rpmhelper
+url http://www.linuxfans.org
+version 0.02
+release 1mgc
+source0 rpmhelper-0.02.tar.gz
+patch0 rpmhelper-path.patch
+license gpl
+group Application/tools
+"""
+
+def parse_spec(spec_fn):
+    def get_weight(k):
+        try:
+            w = ['name',
+                 'version', 
+                 'release', 
+                 'dist', 
+                 'url',
+                 'license', 
+                 'group', 
+                 ].index(k)
+        except ValueError:
+            if k.startswith('group'):
+                return 100      # 'group(zh_cn)'
+
+            if k.startswith('source'):
+                try:
+                    i = int(k[len('source'):])
+                except:
+                    i = 0
+                w = 10000 + i
+            elif k.startswith('patch'): 
+                try:
+                    i = int(k[len('patch'):])
+                except:
+                    i = 0
+                w = 20000 + i
+            else:
+                print k
+                raise
+        return w
+    
+    def cmp_func(a, b):
+        return get_weight(a) - get_weight(b)
+        
+    d = rpmhelper.parse_spec(spec_fn)
+    keys = d.keys()
+    keys.sort(cmp_func)
+    for k in keys:
+        print k, d[k]
+
+def fix_import_path(prog):
+    cwd = os.getcwd()
+    prog_path = os.path.dirname(prog)
+    os.chdir(prog_path)
+    prog_path = os.getcwd()
+    if prog_path.startswith('/usr'): # installed
+        pass
+    else:
+        sys.path.append(prog_path)
+    os.chdir(cwd)
+
+def main():
+    fix_import_path(sys.argv[0])
+    if len(sys.argv) != 2:
+        print help_msg
+        sys.exit(-1)
+    try:
+        parse_spec(sys.argv[1])
+    except Exception, e:
+        print >>sys.stderr, e
+        raise
+        sys.exit(-1)
+    sys.exit(0)
+    
+if __name__ == "__main__":
+    main()
+

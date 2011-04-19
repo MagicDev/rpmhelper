@@ -1,0 +1,83 @@
+#!/usr/bin/python
+#
+# rpm-diff - generate diff list for rpm files.
+#
+# Levin Du <zsdjw@21cn.com>
+#
+# Copyright 2007 Magic Linux Group
+#
+# This software may be freely redistributed under the terms of the GNU
+# library public license.
+#
+# You should have received a copy of the GNU Library Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+
+import os
+import sys
+
+dummy_fn = "dummy"
+help_msg = """Usage: rpm-diff {dir1 | rpmlistfile1} {dir2 | rpmlistfile2}
+rpm-diff will generate output like below:
+
+R remove.rpm dummy
+N dummy      new.rpm
+U foo-1.rpm foo-2.rpm
+D bar-2.rpm foo-1.rpm
+
+'R': remove, 'N': new, 'U': upgrade, 'D': downgrade
+"""
+def rpmdiff(repo1, repo2):
+    import rpmhelper
+    rpm_list1 = rpmhelper.read_from_location(repo1)
+    rpm_list2 = rpmhelper.read_from_location(repo2)
+    diff_list = rpmhelper.diff_rpmlist(rpm_list1, rpm_list2,
+                             full_sync = True)
+    for left, right in diff_list:
+        if not left and right:
+            print 'N %s %s' % (dummy_fn, right.fullname)
+        elif left and not right:
+            print 'R %s %s' % (left.fullname, dummy_fn)
+        elif left and right:
+            print '%s %s %s' % \
+                (left < right and 'U' or 'D',
+                 left.fullname,
+                 right.fullname)
+        
+def get_rpm_clean_list():
+    result = []
+    rpmfn_list = make_rpmlist_from_dir(local_repo)
+    rpmfn_map = sort_rpmlist(rpmfn_list)
+    for li in rpmfn_map.values():
+        if len(li) > 1:
+            result.append((li[0].fullname, 0))
+            for i in range(1, len(li)):
+                result.append((li[i].fullname, 1))
+    return result
+
+def fix_import_path(prog):
+    cwd = os.getcwd()
+    prog_path = os.path.dirname(prog)
+    os.chdir(prog_path)
+    prog_path = os.getcwd()
+    if prog_path.startswith('/usr'): # installed
+        pass
+    else:
+        sys.path.append(prog_path)
+    os.chdir(cwd)
+    
+def main():
+    fix_import_path(sys.argv[0])
+    if len(sys.argv) != 3:
+        print help_msg
+        sys.exit(-1)
+    try:
+        rpmdiff(sys.argv[1], sys.argv[2])
+    except Exception, e:
+        print >>sys.stderr, e
+        sys.exit(-1)
+    sys.exit(0)
+    
+if __name__ == "__main__":
+    main()

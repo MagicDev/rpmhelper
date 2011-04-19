@@ -1,0 +1,14 @@
+2007-08-21  Levin Du  <zsdjw@21cn.com>
+
+	* Add mb-init, mb-build, mb-prepare
+	* Add mb-pull-pkg, mb-push-pkg, mb-fetch-fcpkg
+	* Add rpm-parsespec
+
+2007-08-16  Levin Du  <zsdjw@21cn.com>
+
+	* Rename rpmdiff, rpmfindold to rpm-diff, rpm-findold
+	* Add rpm-findnewest
+
+2007-08-02  Levin Du <zsdjw@21cn.com>
+
+	* Initial import.

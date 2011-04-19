@@ -1,0 +1,39 @@
+#!/bin/bash
+
+PWD=`pwd`
+RC=0
+
+if [ -f $HOME/.mgcbuilder/mbrc ] ; then
+    . $HOME/.mgcbuilder/mbrc
+fi
+
+if [ -z "$MBDIR" ] ; then
+    echo "Error: No MBDIR defined, maybe not having mb-init run?"
+    exit -1
+fi
+
+if [ -n "$1" ] ; then
+    TARGET="$1"
+else
+    echo "Error: Please specify package name."
+    exit -1
+fi
+
+CATEGORY=`GET_CATEGORY`
+
+if [ ! -f $MBPKGDIR/$CATEGORY/$TARGET ] ; then
+    mkdir -p $MBPKGDIR/$CATEGORY/
+    if ! wget $MBPKGDOWNLOAD/$CATEGORY/$TARGET \
+            -O $MBPKGDIR/$CATEGORY/$TARGET ; then
+        rm $MBPKGDIR/$CATEGORY/$TARGET
+    fi
+fi
+
+if [ ! -f $MBPKGDIR/$CATEGORY/$TARGET ] ; then
+    echo "Download failed!"
+    RC=-1
+else
+    ln -s $MBPKGDIR/$CATEGORY/$TARGET $TARGET
+fi
+
+exit $RC

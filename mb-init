@@ -1,0 +1,52 @@
+#!/bin/bash
+
+MBDIR=`pwd`
+TIMESTAMP=`/bin/date +"%Y%m%d%H%M%S"`
+
+# make rpmbuild directories
+mkdir -p $MBDIR/mBuild/{RPMS,SRPMS,BUILD,TMP}
+ln -s . $MBDIR/mBuild/RPMS/athlon
+ln -s . $MBDIR/mBuild/RPMS/i686
+ln -s . $MBDIR/mBuild/RPMS/i586
+ln -s . $MBDIR/mBuild/RPMS/i486
+ln -s . $MBDIR/mBuild/RPMS/i386
+ln -s . $MBDIR/mBuild/RPMS/noarch
+
+# # create rpmbuild macros file
+# if [ -f $HOME/.rpmmacros ] ; then
+#     echo "Backup ~/.rpmmacros to ~/.rpmmacros.$TIMESTAMP"
+#     mv $HOME/.rpmmacros $HOME/.rpmmacros.$TIMESTAMP
+# fi
+
+# echo "Create rpmbuild macro file ~/.rpmmacros."
+# cat > $HOME/.rpmmacros <<EOF
+# %_topdir       $MBDIR/mBuild
+# %_tmppath      $MBDIR/mBuild/TMP
+# EOF
+
+echo "Create magic build config file at ~/.mgcbuilder/mbrc ."
+mkdir -p $HOME/.mgcbuilder
+cat > $HOME/.mgcbuilder/mbrc <<EOF
+MBDIR=$MBDIR
+MBSVNDIR=\$MBDIR/svn
+MBPKGDIR=\$MBDIR/pkg
+MBPKGDOWNLOAD=http://apt.magiclinux.org/magic/2.1/unstable/SOURCES
+MBPKGUPLOAD=ftp://apt.magiclinux.org/magic/2.1/unstable/SOURCES
+
+# Fedora Package List
+FCPKGLIST=$HOME/.mgcbuilder/fc-pkg-list
+FCMIRROR=http://fedora.mirror.iweb.ca/development/source/SRPMS
+
+function GET_CATEGORY {
+    echo \${PWD#\$MBSVNDIR/}
+}
+EOF
+
+cat <<EOF
+
+If you have not done yet, please checkout 
+the spec & patch files in subversion:
+
+    svn co http://svn.magiclinux.org/magiclinux/trunk svn
+
+EOF

@@ -1,0 +1,62 @@
+#!/bin/bash
+# Fetch fedora src.rpm
+
+PWD=`pwd`
+
+if [ -f $HOME/.mgcbuilder/mbrc ] ; then
+    . $HOME/.mgcbuilder/mbrc
+fi
+
+if [ -z "$MBDIR" ] ; then
+    echo "Error: No MBDIR defined, maybe not having mb-init run?"
+    exit -1
+fi
+
+if [ -z "$FCMIRROR" ] ; then
+    echo "Error: No FCMIRROR defined, maybe not having mb-init run?"
+    exit -1
+fi
+
+if [ "$1" == "--refresh" ] ; then
+    FORCE_REFRESH=1
+    shift
+fi
+
+if [ ! -f "$FCPKGLIST" \
+        -o -n "$FORCE_REFRESH" ] ; then
+    rm $FCPKGLIST.html $FCPKGLIST 2>/dev/null
+    echo "Refreshing fedora package list cache."
+    wget $FCMIRROR -O $FCPKGLIST.html && \
+    rpm-findnewest $FCPKGLIST.html > $FCPKGLIST
+    if [ $? != 0 ] ; then
+        echo "Failed fetch list."
+        rm $FCPKGLIST.html $FCPKGLIST 2>/dev/null
+	exit -1
+    fi
+fi
+
+if [ -n "$1" ] ; then
+    TARGET="$1"
+else
+    echo "Error: Please specify package name."
+    exit -1
+fi
+
+FETCH_LIST=`grep $TARGET $FCPKGLIST`
+FETCH_NUM=`echo $FETCH_LIST | wc -l`
+if [ $FETCH_NUM == 0 ] ; then
+    echo "No packages meeting your need."
+    exit -1
+else
+    cat <<EOF
+Will download these $FETCH_NUM packages:
+
+$FETCH_LIST
+
+Press Enter to continue, Ctrl-C to abort.
+EOF
+    read
+    for PKG in $FETCH_LIST ; do
+        wget $FCMIRROR/$PKG
+    done
+fi
